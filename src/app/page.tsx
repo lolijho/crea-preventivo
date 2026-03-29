@@ -8,7 +8,8 @@ import QuoteGenerator from '@/components/QuoteGenerator';
 import QuotePreview from '@/components/QuotePreview';
 import QuoteHistory from '@/components/QuoteHistory';
 import ApiKeyInput from '@/components/ApiKeyInput';
-import { FileText, Settings, Sparkles, Clock } from 'lucide-react';
+import { FileText, Settings, Sparkles, Clock, LogOut } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 type Tab = 'generate' | 'history' | 'settings';
 
@@ -17,6 +18,13 @@ export default function Home() {
   const [apiKey, setApiKey] = useState('');
   const [quotes, setQuotes] = useState<GeneratedQuote[]>([]);
   const [selectedQuote, setSelectedQuote] = useState<GeneratedQuote | null>(null);
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    router.push('/login');
+    router.refresh();
+  };
 
   const refreshQuotes = useCallback(() => {
     setQuotes(getQuotes());
@@ -64,7 +72,7 @@ export default function Home() {
               </div>
             </div>
 
-            <nav className="flex items-center gap-1 bg-gray-100 rounded-xl p-1">
+            <nav className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 mr-2">
               <TabButton
                 active={tab === 'generate'}
                 onClick={() => setTab('generate')}
@@ -85,6 +93,13 @@ export default function Home() {
                 label="Impostazioni"
               />
             </nav>
+            <button
+              onClick={handleLogout}
+              className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+              title="Esci"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
           </div>
         </div>
       </header>
