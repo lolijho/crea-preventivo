@@ -29,6 +29,11 @@ export interface QuoteItem {
   total: number;
 }
 
+export interface TokenUsage {
+  inputTokens: number;
+  outputTokens: number;
+}
+
 export interface GeneratedQuote {
   id: string;
   createdAt: string;
@@ -46,4 +51,19 @@ export interface GeneratedQuote {
   notes: string;
   emailBody: string;
   htmlContent: string;
+  usage?: TokenUsage;
+}
+
+export interface UsageStats {
+  totalInputTokens: number;
+  totalOutputTokens: number;
+  totalRequests: number;
+  history: UsageEntry[];
+}
+
+export interface UsageEntry {
+  date: string;
+  inputTokens: number;
+  outputTokens: number;
+  model: string;
 }

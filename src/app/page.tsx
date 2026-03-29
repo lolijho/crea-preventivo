@@ -7,15 +7,14 @@ import ProfileForm from '@/components/ProfileForm';
 import QuoteGenerator from '@/components/QuoteGenerator';
 import QuotePreview from '@/components/QuotePreview';
 import QuoteHistory from '@/components/QuoteHistory';
-import ApiKeyInput from '@/components/ApiKeyInput';
-import { FileText, Settings, Sparkles, Clock, LogOut } from 'lucide-react';
+import UsageDashboard from '@/components/UsageDashboard';
+import { FileText, Settings, Sparkles, Clock, LogOut, Activity } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
-type Tab = 'generate' | 'history' | 'settings';
+type Tab = 'generate' | 'history' | 'usage' | 'settings';
 
 export default function Home() {
   const [tab, setTab] = useState<Tab>('generate');
-  const [apiKey, setApiKey] = useState('');
   const [quotes, setQuotes] = useState<GeneratedQuote[]>([]);
   const [selectedQuote, setSelectedQuote] = useState<GeneratedQuote | null>(null);
   const router = useRouter();
@@ -38,10 +37,6 @@ export default function Home() {
     setSelectedQuote(quote);
     refreshQuotes();
   };
-
-  const handleApiKeyChange = useCallback((key: string) => {
-    setApiKey(key);
-  }, []);
 
   if (selectedQuote) {
     return (
@@ -87,6 +82,12 @@ export default function Home() {
                 badge={quotes.length > 0 ? quotes.length : undefined}
               />
               <TabButton
+                active={tab === 'usage'}
+                onClick={() => setTab('usage')}
+                icon={<Activity className="w-4 h-4" />}
+                label="Utilizzo"
+              />
+              <TabButton
                 active={tab === 'settings'}
                 onClick={() => setTab('settings')}
                 icon={<Settings className="w-4 h-4" />}
@@ -107,10 +108,7 @@ export default function Home() {
       {/* Content */}
       <main className="max-w-5xl mx-auto px-4 py-8 space-y-6">
         {tab === 'generate' && (
-          <>
-            <ApiKeyInput onKeyChange={handleApiKeyChange} />
-            <QuoteGenerator apiKey={apiKey} onGenerated={handleGenerated} />
-          </>
+          <QuoteGenerator onGenerated={handleGenerated} />
         )}
 
         {tab === 'history' && (
@@ -120,6 +118,8 @@ export default function Home() {
             onRefresh={refreshQuotes}
           />
         )}
+
+        {tab === 'usage' && <UsageDashboard />}
 
         {tab === 'settings' && <ProfileForm />}
       </main>

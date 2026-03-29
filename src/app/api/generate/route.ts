@@ -3,9 +3,12 @@ import Anthropic from '@anthropic-ai/sdk';
 import { BusinessProfile, QuoteRequest } from '@/types';
 
 export async function POST(request: NextRequest) {
-  const apiKey = request.headers.get('x-api-key');
+  const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
-    return NextResponse.json({ error: 'API key mancante' }, { status: 401 });
+    return NextResponse.json(
+      { error: 'ANTHROPIC_API_KEY non configurata sul server' },
+      { status: 500 }
+    );
   }
 
   const { profile, quoteRequest } = (await request.json()) as {
@@ -14,6 +17,8 @@ export async function POST(request: NextRequest) {
   };
 
   const client = new Anthropic({ apiKey });
+
+  const model = process.env.CLAUDE_MODEL || 'claude-sonnet-4-20250514';
 
   const systemPrompt = `Sei un assistente specializzato nella creazione di preventivi professionali.
 
@@ -78,7 +83,7 @@ Rispondi ESCLUSIVAMENTE con un JSON valido (senza markdown code blocks) con ques
 
   try {
     const message = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model,
       max_tokens: 4096,
       system: systemPrompt,
       messages: [{ role: 'user', content: userPrompt }],
@@ -90,16 +95,22 @@ Rispondi ESCLUSIVAMENTE con un JSON valido (senza markdown code blocks) con ques
     }
 
     let jsonText = textContent.text.trim();
-    // Remove markdown code blocks if present
     if (jsonText.startsWith('```')) {
       jsonText = jsonText.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
     }
 
     const quoteData = JSON.parse(jsonText);
 
-    return NextResponse.json(quoteData);
+    return NextResponse.json({
+      ...quoteData,
+      usage: {
+        inputTokens: message.usage.input_tokens,
+        outputTokens: message.usage.output_tokens,
+      },
+      model,
+    });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Errore sconosciuto';
-    return NextResponse.json({ error: message }, { status: 500 });
+    const msg = error instanceof Error ? error.message : 'Errore sconosciuto';
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { QuoteRequest, GeneratedQuote, BusinessProfile } from '@/types';
-import { getProfile, saveQuote } from '@/lib/storage';
+import { getProfile, saveQuote, addUsageEntry } from '@/lib/storage';
 import { Sparkles, FileText, Mail, Loader2 } from 'lucide-react';
 
 const defaultRequest: QuoteRequest = {
@@ -16,10 +16,8 @@ const defaultRequest: QuoteRequest = {
 };
 
 export default function QuoteGenerator({
-  apiKey,
   onGenerated,
 }: {
-  apiKey: string;
   onGenerated: (quote: GeneratedQuote) => void;
 }) {
   const [request, setRequest] = useState<QuoteRequest>(defaultRequest);
@@ -47,10 +45,7 @@ export default function QuoteGenerator({
     try {
       const res = await fetch('/api/generate', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ profile, quoteRequest: request }),
       });
 
@@ -61,12 +56,34 @@ export default function QuoteGenerator({
 
       const data = await res.json();
 
+      // Track token usage
+      if (data.usage) {
+        addUsageEntry({
+          date: new Date().toISOString(),
+          inputTokens: data.usage.inputTokens,
+          outputTokens: data.usage.outputTokens,
+          model: data.model || 'claude-sonnet-4-20250514',
+        });
+      }
+
       const quote: GeneratedQuote = {
         id: crypto.randomUUID(),
         createdAt: new Date().toISOString(),
         clientName: request.clientName,
         clientCompany: request.clientCompany,
-        ...data,
+        subject: data.subject,
+        introduction: data.introduction,
+        items: data.items,
+        subtotal: data.subtotal,
+        vatRate: data.vatRate,
+        vatAmount: data.vatAmount,
+        total: data.total,
+        terms: data.terms,
+        validity: data.validity,
+        notes: data.notes,
+        emailBody: data.emailBody,
+        htmlContent: data.htmlContent,
+        usage: data.usage,
       };
 
       saveQuote(quote);
